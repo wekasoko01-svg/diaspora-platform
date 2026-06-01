@@ -1,12 +1,11 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "pnpm"]
+nixPkgs = ["nodejs_20"]
 
 [phases.install]
-nixPkgs = ["pnpm"]
-cmds = ["pnpm install --frozen-lockfile"]
+cmds = ["npm install -g pnpm@9.15.9", "pnpm install --frozen-lockfile"]
 
 [phases.build]
-cmds = ["cd apps/api && pnpm build"]
+cmds = ["cd packages/db && pnpm generate && cd ../../apps/api && pnpm build"]
 
 [start]
-cmd = "cd apps/api && pnpm start"
+cmd = "cd apps/api && node dist/server.js"
