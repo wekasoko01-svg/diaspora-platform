@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DiasporaLink Status</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f1a2c; color: #e2e8f0; min-height: 100vh; padding: 2rem; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.75rem; }
+  h1 span { color: #328d6b; }
+  .subtitle { color: #94a3b8; font-size: 0.875rem; margin-bottom: 2rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .card { background: #1a2d45; border-radius: 0.75rem; padding: 1.25rem; border: 1px solid rgba(255,255,255,0.05); }
+  .card .label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+  .card .value { font-size: 1.75rem; font-weight: 700; margin-top: 0.25rem; }
+  .card .value.up { color: #22c55e; }
+  .card .value.down { color: #ef4444; }
+  .card .value.degraded { color: #f59e0b; }
+  .card .sub { font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; }
+  .section-title { font-size: 0.875rem; font-weight: 600; margin-bottom: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+  .log-entry { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.8125rem; }
+  .log-entry:last-child { border-bottom: none; }
+  .time { color: #64748b; font-family: monospace; font-size: 0.75rem; }
+  .badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 999px; font-size: 0.6875rem; font-weight: 600; }
+  .badge.up { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .badge.down { background: rgba(239,68,68,0.15); color: #ef4444; }
+  .badge.degraded { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .refresh-note { text-align: center; color: #64748b; font-size: 0.75rem; margin-top: 2rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1><span>DiasporaLink</span> Status</h1>
+  <p class="subtitle">Real-time platform monitoring dashboard</p>
+
+  <div class="grid" id="status-grid">
+    <div class="card"><div class="label">API Server</div><div class="value" id="api-status">—</div><div class="sub" id="api-latency"></div></div>
+    <div class="card"><div class="label">Database</div><div class="value" id="db-status">—</div><div class="sub" id="db-detail"></div></div>
+    <div class="card"><div class="label">Frontend</div><div class="value" id="frontend-status">—</div><div class="sub" id="frontend-uptime"></div></div>
+    <div class="card"><div class="label">Uptime</div><div class="value up" id="uptime">—</div><div class="sub">Since last restart</div></div>
+  </div>
+
+  <div class="section-title">Recent Uptime Checks</div>
+  <div class="card" style="padding:0.75rem 1.25rem;" id="checks-log"></div>
+
+  <div class="refresh-note">Auto-refreshes every 60 seconds · Last checked: <span id="last-checked">—</span></div>
+</div>
+
+<script>
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:4000' : 'https://api.diasporalink.co.ke'
+const FRONTEND_URL = window.location.origin
+
+const checks = []
+const MAX_CHECKS = 20
+
+function formatTime(date) {
+  return date.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
+function setStatus(id, status, detail) {
+  const el = document.getElementById(id)
+  if (!el) return
+  el.textContent = status
+  el.className = 'value ' + status.toLowerCase()
+  const sub = el.parentElement.querySelector('.sub')
+  if (sub && detail) sub.textContent = detail
+}
+
+async function checkEndpoint(url, label) {
+  const start = performance.now()
+  try {
+    const res = await fetch(url)
+    const latency = ((performance.now() - start) / 1000).toFixed(2)
+    return { status: res.ok ? 'UP' : 'DOWN', latency: latency + 's', statusCode: res.status }
+  } catch {
+    return { status: 'DOWN', latency: '-', statusCode: '-' }
+  }
+}
+
+async function checkHealth() {
+  const apiResult = await checkEndpoint(API_BASE + '/health', 'API')
+  let apiData = {}
+  try {
+    const res = await fetch(API_BASE + '/health')
+    apiData = await res.json()
+  } catch {}
+
+  setStatus('api-status', apiResult.status, apiResult.latency ? `${apiResult.latency} · ${apiResult.statusCode}` : '')
+  setStatus('db-status', apiData.database === 'healthy' ? 'UP' : apiData.database === 'unhealthy' ? 'DOWN' : 'DEGRADED', apiData.database || '')
+  setStatus('uptime', apiData.uptime ? `${Math.floor(apiData.uptime / 86400)}d ${Math.floor((apiData.uptime % 86400) / 3600)}h` : '—')
+  if (apiData.version) document.querySelector('#api-latency').textContent = `v${apiData.version} · ${apiData.node}`
+
+  const frontendResult = await checkEndpoint(FRONTEND_URL, 'Frontend')
+  setStatus('frontend-status', frontendResult.status, frontendResult.latency ? `${frontendResult.latency} · ${frontendResult.statusCode}` : '')
+
+  const now = new Date()
+  checks.unshift({
+    time: formatTime(now),
+    api: apiResult.status,
+    db: apiData.database === 'healthy' ? 'UP' : 'DOWN',
+    frontend: frontendResult.status,
+  })
+  if (checks.length > MAX_CHECKS) checks.pop()
+
+  const logEl = document.getElementById('checks-log')
+  logEl.innerHTML = checks.map(c => `
+    <div class="log-entry">
+      <span class="time">${c.time}</span>
+      <span><span class="badge ${c.api.toLowerCase()}">API ${c.api}</span></span>
+      <span><span class="badge ${c.db.toLowerCase()}">DB ${c.db}</span></span>
+      <span><span class="badge ${c.frontend.toLowerCase()}">Web ${c.frontend}</span></span>
+    </div>
+  `).join('')
+
+  document.getElementById('last-checked').textContent = formatTime(now)
+}
+
+checkHealth()
+setInterval(checkHealth, 60000)
+</script>
+</body>
+</html>
