@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint --max-warnings 100",
+    "lint": "tsc --noEmit",
     "test": "playwright test",
     "test:e2e": "playwright test",
     "test:headed": "playwright test --headed"
