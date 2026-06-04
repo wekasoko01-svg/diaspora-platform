@@ -65,22 +65,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+      - uses: pnpm/action-setup@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: "--prod"
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - name: Deploy to Vercel
+        run: |
+          mkdir -p apps/web/.vercel
+          echo '{"orgId":"${{ secrets.VERCEL_ORG_ID }}","projectId":"${{ secrets.VERCEL_PROJECT_ID }}"}' > apps/web/.vercel/project.json
+          npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
+        working-directory: apps/web
 
   deploy-backend:
     needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      RAILWAY_HOOK: ${{ secrets.RAILWAY_DEPLOY_HOOK }}
     steps:
       - uses: actions/checkout@v4
       - name: Deploy to Railway
-        run: curl -X POST ${{ secrets.RAILWAY_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RAILWAY_HOOK" ]; then
+            echo "No RAILWAY_DEPLOY_HOOK set. Connect GitHub repo in Railway dashboard (Settings → Connect GitHub Repo) for auto-deploys, or create a deploy hook."
+          else
+            curl -X POST "$RAILWAY_HOOK"
+          fi
 
   release:
     needs: [deploy-frontend, deploy-backend]
