@@ -17,7 +17,7 @@ export function auditLog(action: string, entity: string) {
             details: { method: req.method, path: req.originalUrl, statusCode: res.statusCode },
             ipAddress: req.ip || req.socket.remoteAddress || null,
           },
-        }).catch((err) => console.error("[AUDIT] Failed to log:", err.message))
+        }).catch((err: unknown) => console.error("[AUDIT] Failed to log:", (err as Error).message))
       }
       return originalJson(body)
     }
