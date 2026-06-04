@@ -74,14 +74,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --no-frozen-lockfile
       - name: Deploy to Vercel
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
+          npm install -g vercel
           mkdir -p apps/web/.vercel
-          echo "{\"orgId\":\"${VERCEL_ORG_ID}\",\"projectId\":\"${VERCEL_PROJECT_ID}\"}" > apps/web/.vercel/project.json
-          npx vercel deploy --prod --yes
+          echo "{\"orgId\":\"${{ secrets.VERCEL_ORG_ID }}\",\"projectId\":\"${{ secrets.VERCEL_PROJECT_ID }}\"}" > apps/web/.vercel/project.json
+          vercel deploy --prod --token "${{ secrets.VERCEL_TOKEN }}" --yes
         working-directory: apps/web
 
   deploy-backend:
