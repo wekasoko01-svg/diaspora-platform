@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
             <CheckCircle className="h-12 w-12 text-success mx-auto mb-4" />
             <h1 className="text-xl font-bold mb-2">Check Your Email</h1>
             <p className="text-muted-foreground text-sm mb-6">
-              If an account exists with {email}, we&apos;ve sent password reset instructions.
+              If an account exists with {email}, we've sent password reset instructions.
             </p>
             <Link href="/login" className="text-sm text-primary hover:underline">Back to Sign In</Link>
           </CardContent>
@@ -55,7 +55,7 @@ export default function ForgotPasswordPage() {
           </Link>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 rounded-lg bg-primary/10"><Mail className="h-5 w-5 text-primary" /></div>
-            <div><h1 className="text-xl font-bold">Forgot Password?</h1><p className="text-sm text-muted-foreground">No worries, we&apos;ll send you reset instructions.</p></div>
+            <div><h1 className="text-xl font-bold">Forgot Password?</h1><p className="text-sm text-muted-foreground">No worries, we'll send you reset instructions.</p></div>
           </div>
           {error && <p className="text-sm text-destructive mb-4 bg-destructive/5 rounded-lg p-3">{error}</p>}
           <form onSubmit={handleSubmit} className="space-y-4">
