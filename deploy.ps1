@@ -171,3 +171,4 @@ Write-Host "4. Configure custom domains (optional)" -ForegroundColor White
 Write-Host ""
 Write-Host "For detailed instructions, see DEPLOYMENT_GUIDE.md" -ForegroundColor Yellow
 Write-Host ""
+# Trigger CI deployment
