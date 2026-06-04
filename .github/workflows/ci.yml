@@ -81,7 +81,7 @@ jobs:
         run: |
           mkdir -p apps/web/.vercel
           echo "{\"orgId\":\"${VERCEL_ORG_ID}\",\"projectId\":\"${VERCEL_PROJECT_ID}\"}" > apps/web/.vercel/project.json
-          npx vercel deploy --prod --token "$VERCEL_TOKEN" --yes
+          npx vercel deploy --prod --yes
         working-directory: apps/web
 
   deploy-backend:
